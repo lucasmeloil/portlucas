@@ -1,9 +1,82 @@
-import React from 'react';
-import { MailIcon, SmartphoneIcon } from '../components/icons';
+import React, { useState, useEffect } from 'react';
+import { MailIcon, SmartphoneIcon, CheckCircleIcon, AlertTriangleIcon } from '../components/icons';
 
 const ContactPage: React.FC = () => {
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+
+  useEffect(() => {
+    // Hide notification after 5 seconds
+    if (status === 'success' || status === 'error') {
+      const timer = setTimeout(() => {
+        setStatus('idle');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStatus('sending');
+    const form = e.currentTarget;
+
+    try {
+      const response = await fetch("https://formsubmit.co/ajax/lucameloil@pm.me", {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+            setStatus('success');
+            form.reset();
+        } else {
+            setStatus('error');
+        }
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setStatus('error');
+    }
+  };
+
+  const notificationConfig = {
+    success: {
+      borderColor: 'border-green-500/50',
+      textColor: 'text-green-300',
+      shadowColor: 'shadow-green-500/20',
+      message: 'Email enviado com sucesso!',
+      icon: <CheckCircleIcon className="h-5 w-5 mr-3" />,
+    },
+    error: {
+      borderColor: 'border-red-500/50',
+      textColor: 'text-red-300',
+      shadowColor: 'shadow-red-500/20',
+      message: 'Ocorreu um erro. Tente novamente.',
+      icon: <AlertTriangleIcon className="h-5 w-5 mr-3" />,
+    },
+  };
+
+  const currentNotification = (status === 'success' || status === 'error') ? notificationConfig[status] : null;
+
   return (
     <>
+      {currentNotification && (
+         <div 
+           role="alert"
+           aria-live="assertive"
+           className={`fixed bottom-24 md:bottom-5 right-5 flex items-center bg-gray-800/90 backdrop-blur-sm border ${currentNotification.borderColor} ${currentNotification.textColor} px-6 py-4 rounded-lg shadow-lg ${currentNotification.shadowColor} animate-fade-in-up z-50`}
+         >
+           {currentNotification.icon}
+           <p className="font-orbitron text-sm">{currentNotification.message}</p>
+         </div>
+      )}
+
       <section id="contact" className="max-w-7xl mx-auto animate-fade-in mb-20 md:mb-32">
         <h2 className="font-orbitron text-3xl md:text-4xl font-bold mb-12 text-center text-shadow-neon-purple">
           Contato
@@ -25,10 +98,9 @@ const ContactPage: React.FC = () => {
                   </a>
             </div>
           </div>
-          <form action="https://formsubmit.co/lucameloil@pm.me" method="POST" className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
               <input type="hidden" name="_subject" value="Novo Contato do Portfólio!" />
-              {/* Note: This might not work as expected in a hash-routed SPA without JS */}
-              <input type="hidden" name="_next" value={window.location.origin + window.location.pathname + '#contact'} />
+              <input type="hidden" name="_captcha" value="false" />
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-1">Nome</label>
               <input type="text" name="name" id="name" required className="w-full bg-gray-900/70 border border-blue-500/30 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all" />
@@ -41,7 +113,13 @@ const ContactPage: React.FC = () => {
               <label htmlFor="message" className="block text-sm font-medium text-gray-400 mb-1">Mensagem</label>
               <textarea name="message" id="message" rows={4} required className="w-full bg-gray-900/70 border border-blue-500/30 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"></textarea>
             </div>
-            <button type="submit" className="w-full font-orbitron bg-purple-600/50 border border-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 transition-all duration-300 text-shadow-neon-purple shadow-lg hover:shadow-purple-500/40">Enviar Mensagem</button>
+            <button 
+              type="submit" 
+              disabled={status === 'sending'}
+              className="w-full font-orbitron bg-purple-600/50 border border-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 transition-all duration-300 text-shadow-neon-purple shadow-lg hover:shadow-purple-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-purple-600/50"
+            >
+              {status === 'sending' ? 'Enviando...' : 'Enviar Mensagem'}
+            </button>
           </form>
         </div>
       </section>
