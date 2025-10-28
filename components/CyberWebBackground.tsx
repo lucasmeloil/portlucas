@@ -1,67 +1,72 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
+import {
+  ReactIcon,
+  NodeIcon,
+  PythonIcon,
+  JSIcon,
+  DockerIcon,
+  GitHubIcon,
+  AngularIcon,
+  HTMLIcon,
+} from './icons';
+
+// Lista de ícones de tecnologia disponíveis para o fundo
+const techIcons = [
+  ReactIcon,
+  NodeIcon,
+  PythonIcon,
+  JSIcon,
+  DockerIcon,
+  GitHubIcon,
+  AngularIcon,
+  HTMLIcon,
+];
+
+// Gera um conjunto de ícones com propriedades aleatórias para a animação
+const floatingIcons = Array.from({ length: 30 }).map((_, i) => {
+  const IconComponent = techIcons[i % techIcons.length];
+  const size = Math.random() * 50 + 20; // Tamanho entre 20px e 70px
+  return {
+    id: i,
+    Component: IconComponent,
+    style: {
+      position: 'absolute' as React.CSSProperties['position'],
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      width: `${size}px`,
+      height: `${size}px`,
+      // Animação com duração e atraso aleatórios para um efeito mais natural
+      animation: `float-up ${Math.random() * 25 + 20}s ${Math.random() * 15}s linear infinite`,
+    },
+  };
+});
 
 export const CyberWebBackground: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationFrameId: number;
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    const characters = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789';
-    const fontSize = 16;
-    const columns = Math.floor(canvas.width / fontSize);
-
-    const drops = Array.from({ length: columns }).map(() => Math.floor(Math.random() * canvas.height / fontSize));
-
-    const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = '#3b82f6'; // Blue text from theme
-      ctx.font = `${fontSize}px monospace`;
-
-      for (let i = 0; i < drops.length; i++) {
-        const text = characters.charAt(Math.floor(Math.random() * characters.length));
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-
-        drops[i]++;
-      }
-    };
-
-    const animate = () => {
-      draw();
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
-
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-50"
-    />
+    <div className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none overflow-hidden">
+      {floatingIcons.map(({ id, Component, style }) => (
+        <div key={id} style={style} className="text-blue-900/50 opacity-20">
+          <Component className="w-full h-full" />
+        </div>
+      ))}
+      <style>{`
+        @keyframes float-up {
+          0% {
+            /* Começa fora da tela, abaixo, e com rotação e opacidade zeradas */
+            transform: translateY(10vh) rotate(0deg);
+            opacity: 0;
+          }
+          10%, 90% {
+            /* A opacidade aumenta para criar um efeito de fade-in e fade-out suave */
+            opacity: 1;
+          }
+          100% {
+            /* Termina fora da tela, acima, com rotação, para um loop contínuo */
+            transform: translateY(-110vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </div>
   );
 };
